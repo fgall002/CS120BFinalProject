@@ -68,12 +68,12 @@ void Start_Button_Handler_Tick(){
     case Start_Button_Start:
       break;
     case Game_Off:
-        Led_Two = 2;
+        LCD_DisplayString(1, "Game Off");
       break;
     case Start_Release_Press:
       break;
     case Game_On:
-      Led_One = 1;
+      LCD_DisplayString(1, "Game On");
       break;
     default:
       break;
