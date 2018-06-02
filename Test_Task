@@ -2,20 +2,29 @@
 #include "io.c"
 
 #define A0 ~PINA  & 0x01
+#define A3 ~PINA & 0x08
 
-
-//LINE TO TEST OUTPUT
-#define Led_One PORTB
-#define Led_Two PORTB
 
 //global variables
 static unsigned char start;
 static unsigned char end;
+unsigned char Pad;
+
+//TEST CODE
+unsigned char game_on;
+unsigned short score;
 
 //Enum
 enum Start_Button_State{Start_Button_Start, Game_Off, Start_Release_Press, Game_On} Start_Button_State;
+enum Pad_State{Pad_Start, Wait_Pressure, Down, Hold_Pressure}Pad_State;
 
 //Tick Function
+
+/*
+            START_BUTTON_HANDALAR_TASK
+
+*/
+
 
 void Start_Button_Handler_Tick(){
 
@@ -68,17 +77,81 @@ void Start_Button_Handler_Tick(){
     case Start_Button_Start:
       break;
     case Game_Off:
-        LCD_DisplayString(1, "Game Off");
+        game_on = 0;
       break;
     case Start_Release_Press:
       break;
     case Game_On:
-      LCD_DisplayString(1, "Game On");
+        game_on = 1;
       break;
     default:
       break;
   }
 }
+
+
+
+/*
+            PRESSURE_PAD_TASK
+
+*/
+
+void Pad_Tick(){
+
+  //Transition
+
+  switch(Pad_State){
+    case Pad_Start:
+        Pad = 0;
+        Pad_State = Wait_Pressure;
+      break;
+    case Wait_Pressure:
+        if(!(game_on) || !(A3)){
+          Pad_State= Wait_Pressure;
+        }
+        else if(game_on && A3){
+          Pad_State = Down;
+        }
+      break;
+    case Down:
+        Pad = 0;
+        Pad_State =Hold_Pressure;
+      break;
+    case Hold_Pressure:
+      if(A3){
+        Pad_State = Hold_Pressure;
+      }
+      else if(!(A3)){
+        Pad_State = Wait_Pressure
+      }
+      break;
+    default:
+      break;
+  }
+
+  //Actions
+  switch(Pad_State){
+    case Pad_Start:
+      break;
+    case Wait_Pressure:
+      break;
+    case Down:
+        Pad = 1;
+        score ++;
+        LCD_DisplayString(1, "Score:");
+        LCD_Cursor(9);
+        LCD_WriteData(score + '0');
+      break;
+    case Hold_Pressure:
+      break;
+    default:
+      break;
+  }
+}
+
+
+
+
 
 
 int main(void){
@@ -90,5 +163,6 @@ int main(void){
 
   while(1) {
     Start_Button_Handler_Tick();
+    Pad_Tick();
   continue;}
 }
