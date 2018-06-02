@@ -1,0 +1,58 @@
+#define A0 ~PINA  & 0x01
+
+//global variables
+static unsigned char start;
+static unsigned char end;
+
+//Enum
+enum Start_Button_State{Start_Button_Start,Game_Off,Game_On} Start_Button_State;
+
+//Tick Function
+
+void Start_Button_Handler_Tick(){
+
+  // Transition
+  switch(Start_Button_State){
+    case Start_Button_Start:
+        start = 0;
+        end = 1;
+        Start_Button_State = Game_Off;
+      break;
+    case Game_Off:
+        if(!(A0)){
+        Start_Button_State = Game_Off;
+        }
+        else if(!(A0)){
+          start = 1;
+          end = 0;
+          Start_Button_State = Game_On;
+        }
+      break;
+    case Game_On:
+        if(!(end)){
+          Start_Button_State =  Game_On;
+        }
+        else if(end){
+          end = 1;
+          start = 0;
+          Start_Button_State = Game_Off
+        }
+      break;
+    default:
+      start = 1;
+      end = 1;
+      break;
+  }
+
+  //Action States
+  switch(Start_Button_State){
+    case Start_Button_Start:
+      break;
+    case Game_Off:
+      break;
+    case Game_On:
+      break;
+    default:
+      break;
+  }
+}
