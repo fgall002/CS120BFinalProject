@@ -1,0 +1,92 @@
+#include <avr/io.h>
+#include "io.c"
+
+#define A0 ~PINA  & 0x01
+
+
+//LINE TO TEST OUTPUT
+#define Led_One PORTB
+#define Led_Two PORTB
+
+//global variables
+static unsigned char start;
+static unsigned char end;
+
+//Enum
+enum Start_Button_State{Start_Button_Start, Game_Off, Start_Release_Press, Game_On} Start_Button_State;
+
+//Tick Function
+
+void Start_Button_Handler_Tick(){
+
+  // Transition
+  switch(Start_Button_State){
+    case Start_Button_Start:
+        start = 0;
+        end = 1;
+        Start_Button_State = Game_Off;
+      break;
+    case Game_Off:
+        if(!(A0)){
+        Start_Button_State = Game_Off;
+        }
+        else if(A0){
+          start = 1;
+          end = 0;
+          Start_Button_State = Start_Release_Press;
+        }
+      break;
+    case Start_Release_Press:
+        if(A0){
+          Start_Button_State = Start_Release_Press;
+        }
+        else if( !(A0) && start && !(end)){
+          Start_Button_State = Game_On;
+        }
+        else if( !(A0) && !(start) && end){
+          Start_Button_State = Game_Off;
+        }
+      break;
+    case Game_On:
+        if(!(A0) && !(end)){
+          Start_Button_State =  Game_On;
+        }
+        else if(A0){
+          end = 1;
+          start = 0;
+          Start_Button_State = Start_Release_Press;
+        }
+      break;
+    default:
+      start = 1;
+      end = 1;
+      break;
+  }
+
+  //Action States
+  switch(Start_Button_State){
+    case Start_Button_Start:
+      break;
+    case Game_Off:
+        Led_Two = 2;
+      break;
+    case Start_Release_Press:
+      break;
+    case Game_On:
+      Led_One = 1;
+      break;
+    default:
+      break;
+  }
+}
+
+
+int main(void){
+  DDRA = 0x00; PORTA = 0xFF;
+  DDRC = 0xFF; PORTC = 0x00;
+  DDRD = 0xFF; PORTD = 0x00;
+
+  LCD_init();
+
+  while(1) {continue;}
+}
