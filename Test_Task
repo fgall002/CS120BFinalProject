@@ -88,5 +88,7 @@ int main(void){
 
   LCD_init();
 
-  while(1) {continue;}
+  while(1) {
+    Start_Button_Handler_Tick();
+  continue;}
 }
