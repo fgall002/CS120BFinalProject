@@ -103,6 +103,7 @@ void Pad_Tick(){
   switch(Pad_State){
     case Pad_Start:
         Pad = 0;
+        score = 0;
         Pad_State = Wait_Pressure;
       break;
     case Wait_Pressure:
@@ -134,13 +135,13 @@ void Pad_Tick(){
     case Pad_Start:
       break;
     case Wait_Pressure:
+      LCD_DisplayString(1, "Score:");
+      LCD_Cursor(9);
+      LCD_WriteData(score + '0');
       break;
     case Down:
         Pad = 1;
         score ++;
-        LCD_DisplayString(1, "Score:");
-        LCD_Cursor(9);
-        LCD_WriteData(score + '0');
       break;
     case Hold_Pressure:
       break;
