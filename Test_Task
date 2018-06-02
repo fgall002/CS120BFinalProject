@@ -123,7 +123,7 @@ void Pad_Tick(){
         Pad_State = Hold_Pressure;
       }
       else if(!(A3)){
-        Pad_State = Wait_Pressure
+        Pad_State = Wait_Pressure;
       }
       break;
     default:
