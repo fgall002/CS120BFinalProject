@@ -42,6 +42,7 @@ void Start_Button_Handler_Tick(){
         else if(A0){
           start = 1;
           end = 0;
+          game_on = 1;
           Start_Button_State = Start_Release_Press;
         }
       break;
@@ -63,6 +64,7 @@ void Start_Button_Handler_Tick(){
         else if(A0){
           end = 1;
           start = 0;
+          game_on = 0;
           Start_Button_State = Start_Release_Press;
         }
       break;
@@ -77,12 +79,10 @@ void Start_Button_Handler_Tick(){
     case Start_Button_Start:
       break;
     case Game_Off:
-        game_on = 0;
       break;
     case Start_Release_Press:
       break;
     case Game_On:
-        game_on = 1;
       break;
     default:
       break;
@@ -138,6 +138,9 @@ void Pad_Tick(){
       LCD_DisplayString(1, "Score:");
       LCD_Cursor(9);
       LCD_WriteData(score + '0');
+      LCD_DisplayString(17, "Game:");
+      LCD_Cursor(23);
+      LCD_WriteData(game_on + '0');
       break;
     case Down:
         Pad = 1;
