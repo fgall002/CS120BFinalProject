@@ -28,7 +28,8 @@ static unsigned char end_endgame;
 //Local Variables
 //Timer Control Task
 unsigned short time;
-const unsigned short tick_limit = 300;
+const unsigned short tick_limit = 100;
+//const unsigned short tick_limit = 300;
 unsigned short Ballcount;
 unsigned char Led_One_Status;
 unsigned char Led_Two_Status;
@@ -36,7 +37,7 @@ unsigned char Led_Two_Status;
 //Display_Task
 unsigned char i;
 unsigned char j;
-unsigned char HighScore;
+unsigned short Highscore;
 
 enum Start_Button_State{Start_Button_Start, Game_Off, Game_On}Start_Button_State;
 enum Timer_CTRL_State{Timer_Start, Wait_Start, Play, Wait_END_Game}Timer_CTRL_State;
@@ -68,7 +69,7 @@ void Start_Button_Handler_Tick(){
       if(!(end) && start){
         Start_Button_State = Game_On;
       }
-      else if(end && start){
+      else if(end){
         end = 1;
         start = 0;
         Start_Button_State = Game_Off;
@@ -84,6 +85,7 @@ void Start_Button_Handler_Tick(){
     case Start_Button_Start:
       break;
     case Game_Off:
+	LCD_DisplayString(1, "GAME OFF");
       break;
     case Game_On:
       break;
@@ -131,8 +133,8 @@ void Timer_CTRL_Tick(){
 		}
 		else if(end_endgame){
 			start_endgame = 0;
-      //Testing code
-      end = 1;
+			//test
+			start=0;
 			Timer_CTRL_State = Wait_Start;
 		}
 		break;
@@ -149,6 +151,7 @@ void Timer_CTRL_Tick(){
 		break;
 		case Play:
 		time++;
+		LCD_DisplayString(1, "timer");
 
 		//Testing code
 		if(Pad){
@@ -156,7 +159,7 @@ void Timer_CTRL_Tick(){
 		}
 
     //Testing code
-    LCD_Cursor(1);
+		LCD_Cursor(1);
 		LCD_WriteData(score + '0');
 
 
@@ -174,6 +177,9 @@ void Timer_CTRL_Tick(){
 
 		break;
 		case Wait_END_Game:
+		/*LCD_ClearScreen();
+		LCD_Cursor(1);
+		LCD_WriteData(start_endgame + '0');*/
 		break;
 	}
 }
@@ -230,13 +236,14 @@ void Display_Task(){
 
 	switch (Display_State) {
 		case Display_Start:
-    //Testing code
-		//Led_One_Status = 0;
-		//Led_Two_Status = 1;
-    HighScore=3;
+			//tEST CODE
+		 Highscore=3;
 		Display_State = Display_Wait;
 		break;
 		case Display_Wait:
+		 //Testing code
+		Led_One_Status = 0;
+		Led_Two_Status = 1;
 		if(!(start_endgame)){
 			Display_State =  Display_Wait;
 		}
@@ -246,7 +253,7 @@ void Display_Task(){
 			end_endgame = 1;
 			Display_State = HighScore_Win;
 		}
-		else if(start_endgame && (!(Led_One_Status) || !(Led_Two_Status))){
+		else if(start_endgame && (!(Led_One_Status) || !(Led_Two_Status)) || (Led_One_Status && Led_Two_Status)){
 			i = 0;
 			end_endgame = 1;
 			Display_State = HighScore_Lose;
@@ -289,6 +296,9 @@ void Display_Task(){
 			Display_State = Win_Blink_Off;
 		}
 		else if( i > 5 && j >5){
+			//Testing code
+			end = 1;
+			start = 0;
 			Display_State = Display_Wait;
 		}
 		break;
@@ -297,6 +307,9 @@ void Display_Task(){
 			Display_State = Lose;
 		}
 		else if(A7){
+			//Testing code
+			end = 1;
+			start = 0;
 			Display_State = Display_Wait;
 		}
 		break;
@@ -315,8 +328,6 @@ void Display_Task(){
 		//LCD_DisplayString(17,"Score:");
 		//LCD_Cursor(24);
 		//LCD_WriteData(score);
-		LCD_DisplayString(1, "Wait");
-
 		end_endgame = 0;
 		break;
 		case HighScore_Win:
@@ -366,8 +377,8 @@ int main(void){
 	while(1) {
 		Start_Button_Handler_Tick();
 		Timer_CTRL_Tick();
-    Pad_Tick();
-    Display_Task();
+		Pad_Tick();
+		Display_Task();
 		while (!TimerFlag);	// Wait 1 sec
 		TimerFlag = 0;
 	}
