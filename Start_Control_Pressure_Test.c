@@ -138,6 +138,14 @@ void Timer_CTRL_Tick(){
 		break;
 		case Play:
 		time++;
+
+		//Testing code
+		if(Pad){
+			score +=1;
+		}
+
+
+		//
 		/*if(echo == 1){
 			score += 10;
 		}
@@ -220,7 +228,7 @@ int main(void){
 		Timer_CTRL_Tick();
     Pad_Tick();
 		LCD_Cursor(1);
-		LCD_WriteData(game_on + '0');
+		LCD_WriteData(score + '0');
 
 		while (!TimerFlag);	// Wait 1 sec
 		TimerFlag = 0;
