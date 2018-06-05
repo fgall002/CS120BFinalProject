@@ -167,7 +167,7 @@ int main(void){
 		//Pad_Tick();
 		Timer_CTRL_Tick();
 		LCD_Cursor(1);
-		LCD_WriteData(start + '0');
+		LCD_WriteData(game_on + '0');
 
 		while (!TimerFlag);	// Wait 1 sec
 		TimerFlag = 0;
