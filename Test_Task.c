@@ -67,9 +67,12 @@ int main(void){
   DDRD = 0xFF; PORTD = 0x00;
 
   LCD_init();
+  Start_Button_State = Start_Button_Start;
 
   while(1) {
     Start_Button_Handler_Tick();
     //Pad_Tick();
+    LCD_Cursor(1);
+    LCD_WriteData(start + '0');
   continue;}
 }
