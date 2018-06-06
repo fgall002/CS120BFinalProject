@@ -1,6 +1,8 @@
+
 #include <avr/io.h>
 #include "timer.h"
 #include "io.c"
+#include "scheduler.h"
 
 
 //Define
@@ -46,6 +48,10 @@ unsigned char i;
 unsigned char j;
 unsigned short Highscore;
 
+//Shot_Task
+unsigned char echo_count;
+const unsigned char echo_limit = 300;
+
 
 
 enum Start_Button_State{Start_Button_Start, Game_Off, Game_On}Start_Button_State;
@@ -56,7 +62,7 @@ enum Shot_Pad_State{Shot_Pad_Start, Wait_Shot, Wait_Echo, LED_ONE_State, LED_TWO
 
 //Tick Function
 
-void Start_Button_Handler_Tick(){
+int Start_Button_Handler_Tick(int state){
 
   //Transition
   switch(Start_Button_State){
@@ -102,10 +108,12 @@ void Start_Button_Handler_Tick(){
     default:
       break;
   }
-
+	return state;
 }
 
-void Timer_CTRL_Tick(){
+//Start_Tick
+
+int Timer_CTRL_Tick(int state){
 	//Transition States
 	switch(Timer_CTRL_State){
 		case Timer_Start:
@@ -164,27 +172,13 @@ void Timer_CTRL_Tick(){
 		time++;
 		LCD_DisplayString(1, "timer");
 
-		//Testing code
-	/*	if(Pad){
-			score +=1;
-		}*/
-
-    //Testing code
-		LCD_Cursor(1);
-		LCD_WriteData(score + '0');
-
-
-		//
-		if(echo == 1){
-			score += 1;
-		}
-		else if(echo == 2){
-			score += 2;
-		}
 		/*if(BallScan){
 			Ballcount++;
 		}*/
 		//Finish rest of instruction to count for score;
+		//Testing code
+		LCD_Cursor(1);
+		LCD_WriteData(score + '0');
 
 		break;
 		case Wait_END_Game:
@@ -192,7 +186,9 @@ void Timer_CTRL_Tick(){
 	}
 }
 
-void Pad_Tick(){
+//Timer_Tick
+
+int Pad_Tick( int state){
 	//Transition
 	switch(Pad_State){
 		case Pad_Start:
@@ -231,16 +227,20 @@ void Pad_Tick(){
 		break;
 		case Down:
 		Pad = 1;
+		LCD_Cursor(1);
+		LCD_WriteData(Pad + '0');
 		break;
 		case Hold_Pressure:
 		break;
 		default:
 		break;
 	}
+	return state;
 }
 
+//Display_Tick
 
-void Display_Task(){
+int Display_Task(int state){
 
 	switch (Display_State) {
 		case Display_Start:
@@ -363,53 +363,69 @@ void Display_Task(){
 		LCD_DisplayString(1, "YOU  LOST >.< ");
 		break;
 	}
+	return state;
 }
 
 //Shot_Pad_Tick
 
-void Shot_Pad_Tick(){
+int Shot_Pad_Tick(int state){
 	switch(Shot_Pad_State){
 		case Shot_Pad_Start:
-		echo = 0;
-		Shot_Pad_State = Wait_Shot;
-		break;
+				echo = 0;
+				echo_count = 0;
+				Shot_Pad_State = Wait_Shot;
+				break;
 		case Wait_Shot:
-		if(!(Pad)){
-			Shot_Pad_State = Wait_Shot;
-		}
-		else if(Pad){
-			Shot_Pad_State = Wait_Echo;
-		}
-		else{
-			Shot_Pad_State = Wait_Shot;
-		}
+				//LCD_DisplayString(1, "WAit shot");
+				echo = 0;
+				if(!(Pad)){
+					Shot_Pad_State = Wait_Shot;
+				}
+				else if(Pad){
+					Shot_Pad_State = Wait_Echo;
+				}
+				else{
+					Shot_Pad_State = Wait_Shot;
+				}
 		break;
 		case Wait_Echo:
-		if(!(A1) && !(A2)){
-			Shot_Pad_State = Wait_Shot;
-		}
-		else if((A1) && !(A2) && Led_One_Status){
-			echo = 2;
-			Led_One_Status = 0;
-			Shot_Pad_State = LED_ONE_State;
-		}
-		else if(!(A1) && (A2) && Led_Two_Status){
-			echo = 2;
-			Led_Two_Status = 0;
-			Shot_Pad_State = LED_TWO_State;
-		}
-		else{
-			Shot_Pad_State = Wait_Shot;
-		}
-		break;
+				//LCD_DisplayString(1, "WaitEcho");
+				if(!(A1) && !(A2) && echo_count > echo_limit){
+					echo_count = 0;
+					Shot_Pad_State = Wait_Shot;
+				}
+				else if((A1) && !(A2) && Led_One_Status){
+					echo = 2;
+					//keep this
+					score +=2;
+					//
+					Led_One_Status = 0;
+					Shot_Pad_State = LED_ONE_State;
+				}
+				else if(!(A1) && (A2) && Led_Two_Status){
+					echo = 2;
+					//keep this
+					score +=2;
+					//
+					Led_Two_Status = 0;
+					Shot_Pad_State = LED_TWO_State;
+				}
+				else if((!(A1) && !(A2) && echo_count <= echo_limit)){
+					Shot_Pad_State = Wait_Echo;
+				}
+				break;
 		case LED_ONE_State:
-		echo = 0;
-		Shot_Pad_State = Wait_Shot;
-		break;
-		case LED_TWO_State:
-		echo = 0;
-		Shot_Pad_State = Wait_Shot;
-		break;
+				//if(echo_count > echo_limit){
+				echo = 0;
+				//}
+				Shot_Pad_State = Wait_Shot;
+				break;
+				case LED_TWO_State:
+				//if(echo_count > echo_limit){
+				echo = 0;
+				//}
+				Shot_Pad_State = Wait_Shot;
+				break;
 		default:
 		Shot_Pad_State = Shot_Pad_Start;
 		break;
@@ -424,6 +440,9 @@ void Shot_Pad_Tick(){
 		if(!(Pad)){
 			if((A1) && !(A2) && Led_One_Status){
 				echo = 1;
+				//keep this
+				score +=1;
+				//
 				Led_One_Status = 0;
 				if(!(Led_One_Status) && !(Led_Two_Status)){
 					Led_Lights = 0;
@@ -434,6 +453,9 @@ void Shot_Pad_Tick(){
 			}
 			else if(!(A1) && (A2) && Led_Two_Status){
 				echo = 1;
+				//keep this
+				score +=1;
+				//
 				Led_Two_Status = 0;
 				if(!(Led_One_Status) && !(Led_Two_Status)){
 					Led_Lights = 0;
@@ -443,9 +465,9 @@ void Shot_Pad_Tick(){
 				}
 			}
 		}
-		echo = 0;
 		break;
 		case Wait_Echo:
+				echo_count++;
 		break;
 		case LED_ONE_State:
 		if(!(Led_One_Status) && !(Led_Two_Status)){
@@ -464,6 +486,7 @@ void Shot_Pad_Tick(){
 		}
 		break;
 	}
+	return state;
 }
 
 
@@ -473,22 +496,98 @@ int main(void){
 	DDRD = 0xFF; PORTD = 0x00;
   DDRB = 0xFF; PORTB = 0x00;
 
-	LCD_init();
-	TimerSet(100);
-	TimerOn();
-  Start_Button_State = Start_Button_Start;
-	Timer_CTRL_State = Timer_Start;
-  Pad_State = Pad_Start;
-  Display_State = Display_Start;
-  Shot_Pad_State = Shot_Pad_Start;
 
+
+
+	// Period for the tasks
+	unsigned long int Start_Button_Handler_Tick_calc = 50;
+	unsigned long int Timer_CTRL_Tick_calc = 100;
+	unsigned long int Pad_Tick_calc = 30;
+	unsigned long int Display_Task_calc = 100;
+	unsigned long int Shot_Pad_Tick_calc = 30;
+
+	//Calculating GCD
+	unsigned long int tmpGCD = 1;
+	tmpGCD = findGCD(Start_Button_Handler_Tick_calc, Timer_CTRL_Tick_calc);
+	tmpGCD = findGCD(tmpGCD, Pad_Tick_calc);
+	tmpGCD = findGCD(tmpGCD, Display_Task_calc);
+	tmpGCD = findGCD(tmpGCD, Shot_Pad_Tick_calc);
+
+	//Greatest common divisor for all tasks or smallest time unit for tasks.
+	unsigned long int GCD = tmpGCD;
+
+	//Recalculate GCD periods for scheduler
+	unsigned long int Start_Button_Handler_Tick_period = Start_Button_Handler_Tick_calc/GCD;
+	unsigned long int Timer_CTRL_Tick_period = Timer_CTRL_Tick_calc/GCD;
+	unsigned long int Pad_Tick_period = Pad_Tick_calc/GCD;
+	unsigned long int Display_Task_period = Display_Task_calc/GCD;
+	unsigned long int Shot_Pad_Tick_period = Shot_Pad_Tick_calc/GCD;
+
+	//Declare an array of tasks
+	static task task1, task2, task3, task4, task5;
+	task *tasks[] = { &task1, &task2, &task3, &task4, &task5};
+	const unsigned short numTasks = sizeof(tasks)/sizeof(task*);
+
+
+	/*Start_Button_State = Start_Button_Start;
+	Timer_CTRL_State = Timer_Start;
+	Pad_State = Pad_Start;
+	Display_State = Display_Start;
+	Shot_Pad_State = Shot_Pad_Start;*/
+
+
+	// Task 1
+	task1.state = Start_Button_Start;//Task initial state.
+	task1.period = Start_Button_Handler_Tick_period;//Task Period.
+	task1.elapsedTime = Start_Button_Handler_Tick_period;//Task current elapsed time.
+	task1.TickFct = &Start_Button_Handler_Tick;//Function pointer for the tick.
+
+	// Task 2
+	task2.state = Timer_Start;//Task initial state.
+	task2.period = Timer_CTRL_Tick_period;//Task Period.
+	task2.elapsedTime = Timer_CTRL_Tick_period;//Task current elapsed time.
+	task2.TickFct = &Timer_CTRL_Tick;//Function pointer for the tick.
+
+	// Task 3
+	task3.state = Pad_Start;//Task initial state.
+	task3.period = Pad_Tick_period;//Task Period.
+	task3.elapsedTime = Pad_Tick_period; // Task current elasped time.
+	task3.TickFct = &Pad_Tick; // Function pointer for the tick.
+
+	// Task 4
+	task4.state =  Display_Start;//Task initial state.
+	task4.period = Display_Task_period;//Task Period.
+	task4.elapsedTime = Display_Task_period; // Task current elasped time.
+	task4.TickFct = &Display_Task; // Function pointer for the tick.
+
+	// Task 5
+	task5.state = Shot_Pad_Start;//Task initial state.
+	task5.period = Shot_Pad_Tick_period;//Task Period.
+	task5.elapsedTime = Shot_Pad_Tick_period; // Task current elasped time.
+	task5.TickFct = &Shot_Pad_Tick; // Function pointer for the tick.
+
+	// Set the timer and turn it on
+	TimerSet(GCD);
+	TimerOn();
+	LCD_init();
+
+	unsigned short i; // Scheduler for-loop iterator
 	while(1) {
-		Start_Button_Handler_Tick();
-		Timer_CTRL_Tick();
-		Pad_Tick();
-    Shot_Pad_Tick();
-		Display_Task();
-		while (!TimerFlag);	// Wait 1 sec
+		// Scheduler code
+		for ( i = 0; i < numTasks; i++ ) {
+			// Task is ready to tick
+			if ( tasks[i]->elapsedTime == tasks[i]->period ) {
+				// Setting next state for task
+				tasks[i]->state = tasks[i]->TickFct(tasks[i]->state);
+				// Reset the elapsed time for next tick.
+				tasks[i]->elapsedTime = 0;
+			}
+			tasks[i]->elapsedTime += 1;
+		}
+		while(!TimerFlag);
 		TimerFlag = 0;
 	}
+
+	// Error: Program should not exit!
+	return 0;
 }
